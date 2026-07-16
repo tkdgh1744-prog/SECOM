@@ -40,6 +40,22 @@ def parse_coordinate_defect_value(value: str) -> int | float | str:
             return value
 
 
+def parse_positive_int(value: str) -> int:
+    """Parse a strictly positive integer CLI value."""
+    parsed = int(value)
+    if parsed <= 0:
+        raise argparse.ArgumentTypeError("value must be greater than 0")
+    return parsed
+
+
+def parse_non_negative_int(value: str) -> int:
+    """Parse a non-negative integer CLI value."""
+    parsed = int(value)
+    if parsed < 0:
+        raise argparse.ArgumentTypeError("value must be 0 or greater")
+    return parsed
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Analyze spatial defect patterns from wafer maps.")
     parser.add_argument("--input-path", type=Path, default=None, help="WM-811K pickle, .npy/.npz, or coordinate CSV.")
@@ -55,6 +71,18 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--n-clusters", type=int, default=8)
     parser.add_argument("--top-k", type=int, default=3)
     parser.add_argument("--max-images", type=int, default=12)
+    parser.add_argument(
+        "--similarity-max-records",
+        type=parse_non_negative_int,
+        default=5000,
+        help="Limit wafer maps used for pairwise similarity search. Use 0 to skip similarity search.",
+    )
+    parser.add_argument(
+        "--max-records",
+        type=parse_positive_int,
+        default=None,
+        help="Limit wafer maps analyzed to a positive count. Omit to analyze all records.",
+    )
 
     parser.add_argument("--wafer-map-col", default="waferMap")
     parser.add_argument("--label-col", type=parse_optional_text, default="failureType")
@@ -119,10 +147,11 @@ def make_demo_records(size: int = 33) -> list[WaferMapRecord]:
 def load_records_from_args(args: argparse.Namespace) -> list[WaferMapRecord]:
     """Load user-provided or demo wafer map records."""
     if args.demo:
-        return make_demo_records()
+        records = make_demo_records()
+        return records[: args.max_records] if args.max_records is not None else records
     if args.input_path is None:
         raise ValueError("Pass --input-path or use --demo.")
-    return load_wafer_map_records(
+    records = load_wafer_map_records(
         path=args.input_path,
         input_format=args.input_format,
         wafer_map_col=args.wafer_map_col,
@@ -135,6 +164,7 @@ def load_records_from_args(args: argparse.Namespace) -> list[WaferMapRecord]:
         defect_col=args.defect_col,
         coordinate_defect_value=args.coordinate_defect_value,
     )
+    return records[: args.max_records] if args.max_records is not None else records
 
 
 def run_optional_ai_outputs(
@@ -201,6 +231,7 @@ def analyze_wafer_maps_from_args(args: argparse.Namespace) -> dict[str, Path]:
         n_clusters=args.n_clusters,
         top_k=args.top_k,
         max_images=args.max_images,
+        similarity_max_records=args.similarity_max_records,
     )
     outputs.update(
         run_optional_ai_outputs(
@@ -225,4 +256,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

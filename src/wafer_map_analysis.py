@@ -758,10 +758,13 @@ def run_wafer_map_analysis(
     n_clusters: int = 8,
     top_k: int = 3,
     max_images: int = 12,
+    similarity_max_records: int | None = 5000,
 ) -> dict[str, Path]:
     """Run the wafer map analysis workflow and write artifacts."""
     if not records:
         raise ValueError("At least one wafer map record is required.")
+    if similarity_max_records is not None and similarity_max_records < 0:
+        raise ValueError("similarity_max_records must be 0 or greater, or None.")
 
     output_dir = Path(output_dir)
     image_dir = output_dir / "images"
@@ -788,7 +791,8 @@ def run_wafer_map_analysis(
         )
         .reset_index()
     )
-    similarity_pairs = wafer_similarity_pairs(records, top_k=top_k, defect_value=defect_value)
+    similarity_records = records if similarity_max_records is None else records[:similarity_max_records]
+    similarity_pairs = wafer_similarity_pairs(similarity_records, top_k=top_k, defect_value=defect_value)
 
     output_dir.mkdir(parents=True, exist_ok=True)
     feature_path = output_dir / "wafer_map_features.csv"
@@ -815,12 +819,3 @@ def run_wafer_map_analysis(
         "report": report_path,
         "pattern_chart": chart_path,
     }
-
-
-
-
-
-
-
-
-

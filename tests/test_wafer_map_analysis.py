@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import tempfile
 import unittest
 from pathlib import Path
@@ -7,7 +8,12 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from scripts.analyze_wafer_maps import make_demo_records
+from scripts.analyze_wafer_maps import (
+    load_records_from_args,
+    make_demo_records,
+    parse_non_negative_int,
+    parse_positive_int,
+)
 from src.wafer_map_analysis import (
     WaferMapRecord,
     connected_component_sizes,
@@ -20,6 +26,24 @@ from src.wafer_map_analysis import (
 
 
 class WaferMapAnalysisTests(unittest.TestCase):
+    def test_record_limit_parsers_define_zero_and_negative_behavior(self) -> None:
+        self.assertEqual(parse_positive_int("3"), 3)
+        self.assertEqual(parse_non_negative_int("0"), 0)
+
+        for value in ("0", "-1"):
+            with self.subTest(parser="positive", value=value):
+                with self.assertRaises(argparse.ArgumentTypeError):
+                    parse_positive_int(value)
+        with self.assertRaises(argparse.ArgumentTypeError):
+            parse_non_negative_int("-1")
+
+    def test_demo_record_limit_is_applied(self) -> None:
+        args = argparse.Namespace(demo=True, max_records=2, input_path=None)
+
+        records = load_records_from_args(args)
+
+        self.assertEqual([record.wafer_id for record in records], ["demo_center", "demo_edge_ring"])
+
     def test_infer_wm811k_masks_uses_two_as_defect(self) -> None:
         wafer_map = np.array(
             [
@@ -117,6 +141,32 @@ class WaferMapAnalysisTests(unittest.TestCase):
             self.assertTrue(outputs["report"].exists())
             features = pd.read_csv(outputs["features"])
             self.assertIn("pattern_cluster", features.columns)
+
+    def test_similarity_limit_zero_skips_pairwise_search(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            outputs = run_wafer_map_analysis(
+                make_demo_records(),
+                output_dir=Path(tmpdir),
+                n_clusters=3,
+                max_images=0,
+                similarity_max_records=0,
+            )
+
+            pairs = pd.read_csv(outputs["similarity_pairs"])
+            self.assertTrue(pairs.empty)
+            self.assertEqual(
+                list(pairs.columns),
+                ["wafer_id", "similar_wafer_id", "similarity", "rank"],
+            )
+
+    def test_negative_similarity_limit_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with self.assertRaisesRegex(ValueError, "similarity_max_records"):
+                run_wafer_map_analysis(
+                    make_demo_records(),
+                    output_dir=Path(tmpdir),
+                    similarity_max_records=-1,
+                )
 
 
 if __name__ == "__main__":
