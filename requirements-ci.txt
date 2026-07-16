@@ -1,0 +1,11 @@
+# Lightweight dependencies for validation and CPU-based unit tests.
+# TensorFlow wafer-map training will be checked in a separate GPU workflow.
+numpy
+pandas
+matplotlib
+seaborn
+scikit-learn
+imbalanced-learn
+joblib
+openpyxl
+notebook

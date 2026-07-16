@@ -1,0 +1,2 @@
+# Keep machine-local Claude settings and credentials out of Git.
+settings.local.json
