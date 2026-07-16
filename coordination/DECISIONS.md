@@ -12,6 +12,9 @@
 | D-006 | Cross-source joins require validated identifiers and documented cardinality. | Row order does not establish manufacturing traceability. |
 | D-007 | Demo, synthetic, and real results must be visibly distinguished. | Educational outputs must not be mistaken for production evidence. |
 | D-008 | CPU validation runs in the default CI; optional TensorFlow/GPU work is separated. | Fast checks should not depend on unavailable accelerators. |
+| D-009 | Deep-learning framework is standardized on PyTorch; the existing TensorFlow wafer CNN/autoencoder is migrated to PyTorch. TF path stays working until the port lands. | User-confirmed 2026-07-17 (re-affirming 2026-07-15). Unifies the FLOPs / quantization / ONNX-export story and keeps the CPU/ONNX optimization path clean. |
+| D-010 | Primary AI-semiconductor target is CPU / ONNX Runtime. GPU is for training convenience only; NPU comparison is documented only if concrete hardware and a runtime become available (see P-003). | User-confirmed 2026-07-17. Crown deliverable = accuracy-vs-latency Pareto (FP32 vs INT8, PyTorch vs ONNX Runtime); keeps scope achievable. |
+| D-011 | Evaluation splits must prevent leakage: wafer maps grouped by lot/wafer, equipment series split time-ordered, no random row-level split. Row-order cross-source joins remain forbidden (see D-006). | Claude technical policy 2026-07-17; standard ML correctness. Prevents optimistic metrics from dies/wafers/time bleeding across train and test. |
 
 ## Pending
 

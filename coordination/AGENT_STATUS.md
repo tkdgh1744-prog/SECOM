@@ -4,9 +4,9 @@ Last updated: 2026-07-17
 
 | Actor | Role | Current work | State |
 | --- | --- | --- | --- |
-| User | Product owner and final approver | Confirm data sources and hardware targets. | waiting |
-| Codex | Implementation and verification | T-001: CI and coordination baseline. | active |
-| Claude | Architecture and code review | T-002: review after Codex handoff. | waiting |
+| User | Product owner and final approver | Decide D-A (CPU/GPU/NPU scope), D-B (PyTorch vs TF), D-C (split policy) — see CLAUDE_FEEDBACK.md. | waiting on decisions |
+| Codex | Implementation and verification | Committed 2cf14a4 (C-003/C-006 fixes + tests) and CODEX_FOLLOWUP.md; T-012 needs a PyTorch/ONNX runtime before it can be claimed to work. | active |
+| Claude | Architecture and code review | T-002 review complete → findings in CLAUDE_FEEDBACK.md (verdict: approve with follow-up). | done |
 
 ## Repository snapshot
 
@@ -19,5 +19,7 @@ Last updated: 2026-07-17
 
 ## Next handoff
 
-After local checks, Codex will update `CODEX_HANDOFF.md`. Claude should then review only
-the stated change set and place findings in `CLAUDE_FEEDBACK.md`.
+T-002 review is complete (see `CLAUDE_FEEDBACK.md`, verdict `approve with follow-up`). The
+CI + coordination baseline is safe to merge to `main` after user approval. Before Codex starts
+the analysis baselines (T-005 onward), the user should resolve decision requests D-A, D-B, and
+D-C and lock the split policy (finding C-002), since those shape model design.
