@@ -163,3 +163,49 @@ test must use `dynamo=False` (or install `onnxscript`) to stay green.
 
 - Full review of `src/wafer_torch.py` + `tests/test_wafer_torch.py` (T-012) once Codex commits them
   (currently uncommitted / in progress). Will independently verify train -> `.pt` -> `.onnx` -> ORT then.
+
+---
+
+# T-012 (PyTorch migration) + T-009 (profiling) review — 2026-07-17
+
+Reviewed committed `2375c26` (T-012) and `ea6f405` (T-009). Ran their tests in `.venv`: **11/11 pass**
+(torch 2.13.0+cpu, onnx 1.22.0, onnxruntime 1.27.0). Implementation files not edited. Verdict: **approve**
+(minor, non-blocking follow-ups).
+
+## CI safety (verified)
+
+Both suites guard torch/onnx with `@unittest.skipUnless(torch_is_available() ...)`, and the availability
+helpers use `find_spec` (no hard import). CI installs `requirements-ci.txt` (no torch), so the torch/ONNX
+tests **skip** (not error) while the pure-numpy data/utility tests still run. CI stays green.
+
+## T-012 — `src/wafer_torch.py` (`2375c26`) — approve
+
+- **Grouped split (D-011) is correct**: `grouped_train_test_indices` assigns whole wafer groups
+  (`group_id or wafer_id`) to train/test so a group never crosses the boundary, and guarantees every class
+  appears in training (retries for rare classes). No leakage; verified by test.
+- **Safe model loading**: `load_torch_model_bundle` uses `torch.load(..., weights_only=True)`, avoiding
+  arbitrary-pickle execution — better than the equipment track's `pickle` (see E-2; worth aligning).
+- ONNX export uses `dynamo=False` (avoids the torch-2.13 onnxscript gotcha), guarded by `onnx_is_available`.
+- Device resolve handles cpu/cuda/mps (Colab GPU per D-010); seeded and reproducible.
+
+| ID | Severity | Area | Finding | Recommended action |
+| --- | --- | --- | --- | --- |
+| W-1 | info | wafer_torch.py CNN trainer | Reports raw accuracy with unweighted CrossEntropy; wafer patterns are imbalanced. | When real WM-811K lands (T-006), report macro-F1 / per-class recall and consider class weights. |
+
+## T-009 — `src/model_profiling.py` (`ea6f405`) — approve
+
+- Profiles **PyTorch FP32, ONNX Runtime FP32, and ONNX INT8 — all on CPU** (D-010 crown-deliverable inputs);
+  `quantize_onnx_dynamic_int8` supplies the INT8 leg.
+- Sound methodology: warmup + N measured runs, p50/p95/min/max/std, throughput; deterministic ORT threads
+  (intra=1/inter=1); RSS memory via psutil/ctypes//proc with an honest "process-level proxy" note.
+- Machine-readable: flat CSV + operations CSV + lossless JSON with captured environment. Repeatable.
+
+| ID | Severity | Area | Finding | Recommended action |
+| --- | --- | --- | --- | --- |
+| P-1 | info | model_profiling.py | `operation_node_count` is an operator-node proxy, not true FLOPs (honestly labeled). | If the course needs FLOPs specifically, add a FLOP estimator (onnx shape inference or `thop`/`fvcore`) later. |
+
+## Status
+
+T-012 and T-009 can move to `done`. The CPU PyTorch/ONNX/INT8 profiling path is real and tested — the crown
+deliverable (accuracy-vs-latency Pareto, FP32 vs INT8, PyTorch vs ONNX Runtime) is ready to populate once
+trained models on real data exist (gated on WM-811K, P-001).
