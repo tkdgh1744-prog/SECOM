@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from src.integrated_dashboard import build_integrated_dashboard
+from src.integrated_dashboard import _format_value, build_integrated_dashboard
 
 
 TINY_PNG = base64.b64decode(
@@ -17,6 +17,10 @@ TINY_PNG = base64.b64decode(
 
 
 class IntegratedDashboardTests(unittest.TestCase):
+    def test_format_value_renders_booleans_for_people(self) -> None:
+        self.assertEqual(_format_value(True), "Yes")
+        self.assertEqual(_format_value(False), "No")
+
     def test_dashboard_integrates_available_tracks_without_cross_join(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)

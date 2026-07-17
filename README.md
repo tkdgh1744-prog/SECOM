@@ -18,11 +18,15 @@ UCI SECOM semiconductor process sensor data瑜??ъ슜???쒗뭹???뺤긽/遺덈�
 - `src/wafer_features.py`: wafer defect spatial feature utilities
 - `src/wafer_map_analysis.py`: wafer map spatial pattern analysis, similarity, clustering, visualization, and optional AI utilities
 - `src/equipment_features.py`: equipment event feature utilities
+- `src/equipment_anomaly.py`: time-aware robust equipment anomaly detector
+- `src/integrated_dashboard.py`: standalone integrated result dashboard builder
 - `src/feature_store.py`: sensor, wafer, and equipment feature assembly utilities
 - `scripts/run_quality_report.py`: CLI for writing SECOM quality report CSV files
 - `scripts/train_secom_model.py`: CLI for training, selecting, tuning, and saving SECOM models
 - `scripts/build_auxiliary_features.py`: CLI for building wafer/equipment feature CSV files
 - `scripts/analyze_wafer_maps.py`: CLI for WM-811K/array/coordinate wafer map analysis
+- `scripts/analyze_equipment_anomalies.py`: CLI for equipment sensor anomaly detection
+- `scripts/generate_integrated_dashboard.py`: CLI for generating the integrated HTML dashboard
 - `scripts/assemble_feature_table.py`: CLI for assembling modeling feature tables
 - `scripts/predict_with_model.py`: CLI for batch prediction with saved model bundles
 - `scripts/generate_monitoring_report.py`: CLI for process-quality monitoring reports
@@ -72,6 +76,10 @@ make train-secom        # train, evaluate, tune threshold, and save a SECOM mode
 make quality-report     # generate SECOM quality CSV reports
 make auxiliary-features # build wafer/equipment feature CSV files
 make wafer-map-analysis # analyze WM-811K-style wafer map spatial patterns
+make wafer-map-demo     # generate deterministic synthetic wafer-map outputs
+make equipment-anomaly-demo # generate deterministic equipment anomaly outputs
+make dashboard          # generate the integrated dashboard from default output paths
+make dashboard-demo     # generate both synthetic tracks and the integrated dashboard
 make assemble-features  # assemble one modeling feature table
 make predict            # run batch prediction with a saved model bundle
 make monitor            # generate monitoring CSV reports
@@ -137,6 +145,34 @@ python scripts/analyze_wafer_maps.py --input-path data/raw/wafer_die_map.csv --i
 - `outputs/wafer_maps/wafer_map_report.md`: 분석 리포트
 
 라벨이 있는 데이터에서는 `--train-cnn`으로 CNN 패턴 분류를, `--autoencoder`로 Autoencoder 기반 이상 패턴 점수를 추가로 만들 수 있습니다. TensorFlow가 설치되어 있지 않으면 이 AI 옵션만 건너뛰고 기초 분석은 계속 사용할 수 있습니다.
+
+## Equipment Anomaly CLI
+
+Run the deterministic CPU demo or analyze a real time-ordered sensor CSV:
+
+```bash
+python scripts/analyze_equipment_anomalies.py --demo --output-dir outputs/equipment_anomalies_demo
+python scripts/analyze_equipment_anomalies.py --input-path data/raw/equipment_sensors.csv --sensor-columns temperature,vibration,pressure --label-col failure_label --integration-mode real --output-dir outputs/equipment_anomalies
+```
+
+Main outputs:
+
+- `equipment_anomaly_scores.csv`: time-ordered anomaly scores and split labels
+- `equipment_anomaly_summary.csv`: equipment and split summaries
+- `equipment_anomaly_metrics.csv`: evaluation metrics when labels are available
+- `equipment_anomaly_model.pkl`: reusable robust z-score detector bundle
+- `equipment_anomaly_metadata.json`: detector settings, threshold, and provenance mode
+
+## Integrated Dashboard CLI
+
+Generate a standalone HTML view from any available SECOM, wafer, and equipment outputs:
+
+```bash
+python scripts/generate_integrated_dashboard.py
+python scripts/generate_integrated_dashboard.py --wafer-dir outputs/wafer_maps_demo --wafer-mode synthetic --equipment-dir outputs/equipment_anomalies_demo --equipment-mode synthetic
+```
+
+The output is written to `outputs/integrated_dashboard/index.html`. Missing tracks remain visible as unavailable, and the dashboard never joins unrelated records by row order.
 
 ## Feature Assembly CLI
 

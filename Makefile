@@ -1,6 +1,6 @@
 ﻿PYTHON ?= python
 
-.PHONY: validate test check train-secom quality-report auxiliary-features wafer-map-analysis assemble-features predict monitor summary pipeline
+.PHONY: validate test check train-secom quality-report auxiliary-features wafer-map-analysis wafer-map-demo equipment-anomaly-demo dashboard dashboard-demo assemble-features predict monitor summary pipeline
 
 validate:
 	$(PYTHON) validate_notebook.py
@@ -22,6 +22,18 @@ auxiliary-features:
 
 wafer-map-analysis:
 	$(PYTHON) scripts/analyze_wafer_maps.py --input-path data/raw/wm811k.pkl --input-format wm811k --output-dir outputs/wafer_maps
+
+wafer-map-demo:
+	$(PYTHON) scripts/analyze_wafer_maps.py --demo --output-dir outputs/wafer_maps_demo
+
+equipment-anomaly-demo:
+	$(PYTHON) scripts/analyze_equipment_anomalies.py --demo --output-dir outputs/equipment_anomalies_demo
+
+dashboard:
+	$(PYTHON) scripts/generate_integrated_dashboard.py --reports-dir outputs/reports --wafer-dir outputs/wafer_maps --equipment-dir outputs/equipment_anomalies --output-path outputs/integrated_dashboard/index.html
+
+dashboard-demo: wafer-map-demo equipment-anomaly-demo
+	$(PYTHON) scripts/generate_integrated_dashboard.py --reports-dir outputs/reports --wafer-dir outputs/wafer_maps_demo --wafer-mode synthetic --equipment-dir outputs/equipment_anomalies_demo --equipment-mode synthetic --output-path outputs/integrated_dashboard/index.html
 
 assemble-features:
 	$(PYTHON) scripts/assemble_feature_table.py --sensor-path data/raw/sensor_features.csv --wafer-path data/raw/wafer_features.csv --equipment-path data/raw/equipment_features.csv --output-path outputs/features/modeling_table.csv

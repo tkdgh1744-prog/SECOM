@@ -43,6 +43,8 @@ def _normalize_mode(mode: object) -> str:
 def _format_value(value: object) -> str:
     if value is None or (isinstance(value, float) and np.isnan(value)):
         return "-"
+    if isinstance(value, (bool, np.bool_)):
+        return "Yes" if bool(value) else "No"
     if isinstance(value, (float, np.floating)):
         absolute = abs(float(value))
         if absolute >= 1000:
