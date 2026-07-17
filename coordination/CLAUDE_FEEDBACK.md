@@ -71,3 +71,61 @@ The CI + coordination baseline (branch `codex/collaboration-baseline`) is safe t
 after user approval. None of the findings block the scaffolding. Before Codex starts the analysis
 baselines (T-005 onward), resolve D-A, D-B, and D-C and lock the split policy (C-002), because those
 shape model design and cannot be cheaply changed later.
+
+---
+
+# T-007 / T-008 review (2026-07-17)
+
+Reviewed commits: `b134b66` (equipment anomaly baseline, T-007) and `c4e8f95` (integrated
+dashboard, T-008). Implementation files were not edited. Full suite: **80 tests pass, 3 skipped**.
+Verdict for both: **approve** (minor, non-blocking follow-ups only).
+
+## T-007 — Equipment anomaly baseline (`b134b66`)
+
+Strengths (verified against the diff, not just the description):
+
+- **Leakage-free, D-011-compliant time split.** `time_ordered_split_mask` splits on unique
+  timestamps so equal times never straddle the boundary; the detector fits on train rows only and
+  the threshold is the train-score quantile — no evaluation data touches fitting or thresholding.
+- **`integration_mode` stamped everywhere** (each scored row, summary, metadata JSON, report);
+  demo forces `synthetic`. This implements finding C-005.
+- **Label leakage guarded**: auto sensor-selection excludes common label columns
+  (`failure_label`, `is_anomaly`, `target`, ...); metrics are computed on the evaluation split only.
+- Tests (6) cover the split, late-anomaly detection, label handling, and machine-readable outputs.
+
+Follow-ups (non-blocking):
+
+| ID | Severity | Area | Finding | Recommended action |
+| --- | --- | --- | --- | --- |
+| E-1 | info | src/equipment_anomaly.py | Detector is a per-row robust z-score (point anomaly), not a temporal model — no windowing/lag/changepoint. Honest as a baseline, but "anomaly-time" detection benefits from temporal structure. | Keep as the CPU baseline; consider rolling/lag features or a changepoint pass later. |
+| E-2 | low | scripts/analyze_equipment_anomalies.py:106 | Model bundle persisted via `pickle`, while the SECOM track uses `joblib`. Pickle of a custom class is version-fragile and unsafe to load from untrusted sources. | Prefer `joblib`, or serialize the detector arrays to `.npz`/JSON, for consistency and safe loading. |
+| E-3 | info | src/equipment_anomaly.py:271 | Threshold assumes the earliest training window is mostly normal; early anomalies or regime shift inflate it. | Document the assumption; consider a dedicated validation window for the threshold on real data. |
+
+## T-008 — Integrated dashboard (`c4e8f95`)
+
+This is the highest key-mismatch-risk item, and the primary concern is **cleanly avoided**:
+
+- **No cross-source / row-order join.** The three tracks render as independent panels from separate
+  output directories; there is no sample-level merge. The overview carries an explicit boundary
+  notice ("does not imply sample-level linkage between SECOM, wafer, and equipment records") and the
+  header reads "No row-order joins". Satisfies the GOAL.md first-milestone rule and D-006.
+- Per-track `integration_mode` badges; missing tracks render as "not available"/"missing" honestly
+  (tested at 0/3).
+- **Standalone**: inline CSS/JS + base64-embedded PNG, no CDN — opens offline; equipment timeline is
+  hand-drawn on canvas.
+- **Safe rendering**: table cells/labels HTML-escaped; the JSON chart payload escapes `<` to prevent
+  a `</script>` breakout.
+- **Correct counting**: only evaluation-split anomalies are tallied (train excluded), verified by test.
+
+Follow-ups (non-blocking):
+
+| ID | Severity | Area | Finding | Recommended action |
+| --- | --- | --- | --- | --- |
+| D-1 | info | src/integrated_dashboard.py:53 | Booleans render as `1`/`0` in tables (Python `bool` is an `int` subclass in `_format_value`); e.g. `is_anomaly` shows 1/0. | Optional: special-case `bool` to `Yes`/`No` for readability. |
+| D-2 | info | future | The "no linkage" stance is correct. When real IDs eventually exist, any linkage must still pass a validated key contract (D-006/D-011), never row order. | Keep the boundary notice; gate future joins on validated keys. |
+
+## Verdict (T-007 / T-008)
+
+`approve` — both. T-007 and T-008 can move to `done`. Suggested next reviews: T-006 (wafer-map
+leakage/split/metrics) once the wafer classification baseline (T-005) lands; T-009 profiling should
+target CPU/ONNX per D-010.
