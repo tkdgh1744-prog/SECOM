@@ -30,4 +30,5 @@ D-C and lock the split policy (finding C-002), since those shape model design.
 - T-010 is resolved: CPU/ONNX is primary, cloud GPU is training-only, and NPU is unavailable.
 - T-011 bridge design is complete; hosted runtime/API authentication remains P-004.
 - T-012 is approved by Claude in `ab8a497`; only non-blocking real-data metric and FLOPs follow-ups remain.
-- The first stable `main` merge is approved and ready for final verification.
+- The first stable milestone is on `main` at `7ee8575` and pushed to GitHub.
+- T-005 cloud preflight work continues on `codex/wm811k-cloud-preflight` while T-004 awaits the licensed source/path.

@@ -46,7 +46,20 @@ from google.colab import drive
 drive.mount("/content/drive")
 ```
 
-Then pass the dataset path to the same CLI:
+Before training, inspect only a pickle obtained from a trusted source:
+
+```python
+!python scripts/preflight_wm811k.py \
+  --input-path /content/drive/MyDrive/datasets/LSWMD.pkl \
+  --source-uri DATASET_SOURCE_URL \
+  --license-note "verified dataset terms" \
+  --compute-sha256 \
+  --output-path outputs/wafer_maps/wm811k_preflight.json
+```
+
+Check that `ready_for_grouped_training` is `true`. The source URI, license note,
+SHA-256, labels, lot groups, and sampled map shapes remain recorded in JSON.
+Then pass the same dataset path to the analysis CLI:
 
 ```python
 !python scripts/analyze_wafer_maps.py \

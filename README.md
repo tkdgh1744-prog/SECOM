@@ -18,6 +18,7 @@ UCI SECOM semiconductor process sensor data瑜??ъ슜???쒗뭹???뺤긽/遺덈�
 - `src/secom_training.py`: model ranking and threshold tuning helpers
 - `src/wafer_features.py`: wafer defect spatial feature utilities
 - `src/wafer_map_analysis.py`: wafer map spatial pattern analysis, similarity, clustering, visualization, and optional AI utilities
+- `src/wafer_dataset.py`: WM-811K provenance, checksum, schema, label, group, and map preflight checks
 - `src/wafer_torch.py`: grouped PyTorch training, model bundles, and ONNX export
 - `src/wafer_ai_outputs.py`: PyTorch and legacy TensorFlow artifact orchestration
 - `src/model_profiling.py`: repeatable PyTorch/ONNX CPU latency, memory, and operation profiling
@@ -28,6 +29,7 @@ UCI SECOM semiconductor process sensor data瑜??ъ슜???쒗뭹???뺤긽/遺덈�
 - `scripts/run_quality_report.py`: CLI for writing SECOM quality report CSV files
 - `scripts/train_secom_model.py`: CLI for training, selecting, tuning, and saving SECOM models
 - `scripts/build_auxiliary_features.py`: CLI for building wafer/equipment feature CSV files
+- `scripts/preflight_wm811k.py`: CLI for validating a trusted cloud-mounted WM-811K pickle
 - `scripts/analyze_wafer_maps.py`: CLI for WM-811K/array/coordinate wafer map analysis
 - `scripts/profile_wafer_models.py`: CLI for FP32/INT8 wafer-model profiling
 - `scripts/analyze_equipment_anomalies.py`: CLI for equipment sensor anomaly detection
@@ -139,10 +141,14 @@ python scripts/build_auxiliary_features.py --wafer-input data/raw/wafer_inspecti
 WM-811K 스타일 pickle(`waferMap` 컬럼), `.npy/.npz` 배열, 또는 `wafer_id,x,y,value/is_defect` 좌표 CSV를 입력으로 받아 공간 불량 패턴 분석 프로그램을 실행합니다.
 
 ```bash
+python scripts/preflight_wm811k.py --input-path /cloud/path/LSWMD.pkl --source-uri DATASET_SOURCE_URL --license-note "verified dataset terms" --compute-sha256 --output-path outputs/wafer_maps/wm811k_preflight.json
 python scripts/analyze_wafer_maps.py --demo --output-dir outputs/wafer_maps_demo
 python scripts/analyze_wafer_maps.py --input-path data/raw/wm811k.pkl --input-format wm811k --output-dir outputs/wafer_maps
 python scripts/analyze_wafer_maps.py --input-path data/raw/wafer_die_map.csv --input-format coordinate --value-col die_status --coordinate-defect-value FAIL --output-dir outputs/wafer_maps
 ```
+
+Only load a pickle obtained from a trusted source. Continue to analysis after
+the preflight confirms the expected labels, lot groups, map shapes, and provenance.
 
 Install the optional AI stack, then use the same command on local CPU or Colab GPU:
 
