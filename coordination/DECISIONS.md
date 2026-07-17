@@ -15,12 +15,14 @@
 | D-009 | Deep-learning framework is standardized on PyTorch; the existing TensorFlow wafer CNN/autoencoder is migrated to PyTorch. TF path stays working until the port lands. | User-confirmed 2026-07-17 (re-affirming 2026-07-15). Unifies the FLOPs / quantization / ONNX-export story and keeps the CPU/ONNX optimization path clean. |
 | D-010 | Primary AI-semiconductor target is CPU / ONNX Runtime. GPU is for training convenience only; NPU comparison is documented only if concrete hardware and a runtime become available (see P-003). | User-confirmed 2026-07-17. Crown deliverable = accuracy-vs-latency Pareto (FP32 vs INT8, PyTorch vs ONNX Runtime); keeps scope achievable. |
 | D-011 | Evaluation splits must prevent leakage: wafer maps grouped by lot/wafer, equipment series split time-ordered, no random row-level split. Row-order cross-source joins remain forbidden (see D-006). | Claude technical policy 2026-07-17; standard ML correctness. Prevents optimistic metrics from dies/wafers/time bleeding across train and test. |
+| D-012 | WM-811K will be stored in a cloud-accessible dataset location, not downloaded into the repository or required on the local PC. Only code, small approved samples, provenance, and generated summaries belong in the project. | User-confirmed 2026-07-17. Keeps the repository lightweight and lets Colab/Kaggle supply training storage and GPU access. |
+| D-013 | No NPU is available for the current milestone. CPU/ONNX Runtime measurements proceed now, cloud GPU is used for training, and NPU results remain explicitly unavailable until real hardware and a compatible runtime are selected. | User-confirmed 2026-07-17. Prevents estimated or simulated NPU numbers from being presented as measured results. |
 
 ## Pending
 
 | ID | Question | Owner |
 | --- | --- | --- |
-| P-001 | What licensed source and storage location will be used for WM-811K? | User |
+| P-001 | Which licensed WM-811K source and exact cloud dataset path will be used? Cloud storage is already approved by D-012. | User |
 | P-002 | What equipment time-series dataset will be used first? | User and Claude |
-| P-003 | Which NPU hardware/runtime will be available for comparison? | User |
+| P-003 | Which NPU hardware/runtime may become available for a future comparison? This does not block the current milestone. | User |
 | P-004 | Which remote service will host the future Codex-Claude agent bridge? | User and Codex |

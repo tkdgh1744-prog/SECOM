@@ -29,6 +29,9 @@ wafer-map-demo:
 wafer-ai-demo:
 	$(PYTHON) scripts/analyze_wafer_maps.py --demo --train-cnn --cnn-epochs 1 --autoencoder --autoencoder-epochs 1 --ai-backend pytorch --device cpu --export-onnx --output-dir outputs/wafer_maps_pytorch_demo
 
+profile-wafer-ai:
+	$(PYTHON) scripts/profile_wafer_models.py --pytorch-model outputs/wafer_maps_pytorch_demo/cnn_pattern_classifier.pt --onnx-model outputs/wafer_maps_pytorch_demo/cnn_pattern_classifier.onnx --quantize-int8 --output-dir outputs/profiling/wafer_cnn
+
 equipment-anomaly-demo:
 	$(PYTHON) scripts/analyze_equipment_anomalies.py --demo --output-dir outputs/equipment_anomalies_demo
 

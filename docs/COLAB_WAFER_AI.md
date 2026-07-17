@@ -88,3 +88,23 @@ Important model artifacts:
 - `cnn_metrics.csv`: evaluation result and model parameter count
 
 Raw datasets and generated model files remain excluded from Git.
+
+## 6. Profile the deployable CPU model
+
+Run this step on the target CPU runtime, even when training used a Colab GPU:
+
+```python
+!python scripts/profile_wafer_models.py \
+  --pytorch-model outputs/wafer_maps/cnn_pattern_classifier.pt \
+  --onnx-model outputs/wafer_maps/cnn_pattern_classifier.onnx \
+  --quantize-int8 \
+  --batch-size 1 \
+  --warmup-runs 10 \
+  --measured-runs 50 \
+  --intra-op-threads 1 \
+  --output-dir outputs/profiling/wafer_cnn
+```
+
+The JSON report records the runtime and hardware context. NPU results must stay
+marked unavailable until a concrete device and runtime can execute the same
+measurement protocol.

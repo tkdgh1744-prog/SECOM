@@ -20,6 +20,7 @@ UCI SECOM semiconductor process sensor data瑜??ъ슜???쒗뭹???뺤긽/遺덈�
 - `src/wafer_map_analysis.py`: wafer map spatial pattern analysis, similarity, clustering, visualization, and optional AI utilities
 - `src/wafer_torch.py`: grouped PyTorch training, model bundles, and ONNX export
 - `src/wafer_ai_outputs.py`: PyTorch and legacy TensorFlow artifact orchestration
+- `src/model_profiling.py`: repeatable PyTorch/ONNX CPU latency, memory, and operation profiling
 - `src/equipment_features.py`: equipment event feature utilities
 - `src/equipment_anomaly.py`: time-aware robust equipment anomaly detector
 - `src/integrated_dashboard.py`: standalone integrated result dashboard builder
@@ -28,6 +29,7 @@ UCI SECOM semiconductor process sensor data瑜??ъ슜???쒗뭹???뺤긽/遺덈�
 - `scripts/train_secom_model.py`: CLI for training, selecting, tuning, and saving SECOM models
 - `scripts/build_auxiliary_features.py`: CLI for building wafer/equipment feature CSV files
 - `scripts/analyze_wafer_maps.py`: CLI for WM-811K/array/coordinate wafer map analysis
+- `scripts/profile_wafer_models.py`: CLI for FP32/INT8 wafer-model profiling
 - `scripts/analyze_equipment_anomalies.py`: CLI for equipment sensor anomaly detection
 - `scripts/generate_integrated_dashboard.py`: CLI for generating the integrated HTML dashboard
 - `docs/COLAB_WAFER_AI.md`: Colab runner and external WM-811K path guide
@@ -82,6 +84,7 @@ make auxiliary-features # build wafer/equipment feature CSV files
 make wafer-map-analysis # analyze WM-811K-style wafer map spatial patterns
 make wafer-map-demo     # generate deterministic synthetic wafer-map outputs
 make wafer-ai-demo      # train PyTorch demo models and export ONNX
+make profile-wafer-ai   # compare PyTorch, ONNX FP32, and ONNX INT8 on CPU
 make equipment-anomaly-demo # generate deterministic equipment anomaly outputs
 make dashboard          # generate the integrated dashboard from default output paths
 make dashboard-demo     # generate both synthetic tracks and the integrated dashboard
@@ -163,6 +166,22 @@ grouped split audit CSV, metrics, and optional ONNX model. `--autoencoder` write
 reconstruction scores plus `.pt` and ONNX models. WM-811K uses `lotName` as the
 default leakage group. The temporary legacy path remains available with
 `--ai-backend tensorflow`.
+
+## Wafer Model Profiling CLI
+
+Profile the saved PyTorch bundle and ONNX model with repeated CPU measurements,
+then create and measure a dynamically weight-quantized INT8 ONNX model:
+
+```bash
+python scripts/profile_wafer_models.py --pytorch-model outputs/wafer_maps_pytorch_demo/cnn_pattern_classifier.pt --onnx-model outputs/wafer_maps_pytorch_demo/cnn_pattern_classifier.onnx --quantize-int8 --output-dir outputs/profiling/wafer_cnn
+```
+
+The profiler writes `model_profiles.csv`, `operation_profiles.csv`, and
+`model_profiles.json`. Results include model and parameter bytes, input/output
+memory proxies, process RSS observations, operator counts, repeated latency
+percentiles, and throughput. CPU thread count, batch size, warmup count, and
+measurement count are explicit CLI settings so later hardware comparisons use
+the same protocol.
 
 ## Equipment Anomaly CLI
 
