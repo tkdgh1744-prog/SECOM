@@ -129,3 +129,37 @@ Follow-ups (non-blocking):
 `approve` — both. T-007 and T-008 can move to `done`. Suggested next reviews: T-006 (wafer-map
 leakage/split/metrics) once the wafer classification baseline (T-005) lands; T-009 profiling should
 target CPU/ONNX per D-010.
+
+---
+
+# PyTorch toolchain verification + `0d3460b` review (2026-07-17)
+
+## Independent CPU toolchain check (my own scratch script, not repo code)
+
+Ran a self-contained PyTorch CNN -> `.pt` -> ONNX -> ONNX Runtime (+INT8) smoke test in `.venv`:
+
+- torch **2.13.0+cpu**, onnxruntime 1.27.0, onnx 1.22.0; `torch.cuda.is_available()=False` (CPU build).
+- PyTorch vs ONNX Runtime outputs: max abs diff **1.0e-07** (numerical parity holds).
+- INT8 dynamic quantization: ONNX **547 KB -> 143 KB (26% of FP32)**; INT8 vs torch max diff 8.7e-04.
+- CPU latency (tiny model): PyTorch ~3.3 ms vs ONNX Runtime ~0.09 ms/infer.
+
+Conclusion: the **D-010 crown-deliverable path (FP32 vs INT8, PyTorch vs ONNX Runtime) is feasible on
+this machine.**
+
+**Gotcha found:** torch 2.13's *default* `torch.onnx.export` requires `onnxscript` (not installed) and
+errors; the legacy `dynamo=False` exporter works without it. **Codex already uses `dynamo=False`** in
+`src/wafer_torch.py::export_torch_model_to_onnx` (uncommitted), so the T-012 export path is sound and
+no extra install is needed. `requirements-ai.txt` does not pin `onnxscript`, which is fine given
+`dynamo=False`; add it only if the modern dynamo exporter is ever wanted. **CI note:** any ONNX-export
+test must use `dynamo=False` (or install `onnxscript`) to stay green.
+
+## `0d3460b` (Address dashboard review) — approve
+
+- **D-1 resolved**: `_format_value` now renders booleans as `Yes`/`No`, placed *before* the int branch
+  (correct, since `bool` is an `int` subclass). README/Makefile docs and a test were added.
+- **D-2** was a future-only note; no code change required now.
+
+## Pending
+
+- Full review of `src/wafer_torch.py` + `tests/test_wafer_torch.py` (T-012) once Codex commits them
+  (currently uncommitted / in progress). Will independently verify train -> `.pt` -> `.onnx` -> ORT then.
