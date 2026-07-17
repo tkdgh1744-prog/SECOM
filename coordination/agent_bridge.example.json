@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "mode": "dry-run",
+  "repository": "tkdgh1744-prog/SECOM",
+  "base_branch": "main",
+  "work_branch_prefix": "agent/",
+  "state_store": "github",
+  "agents": {
+    "implementer": "codex",
+    "reviewer": "claude"
+  },
+  "limits": {
+    "max_review_rounds": 3,
+    "max_consecutive_validation_failures": 2,
+    "max_wall_minutes": 60,
+    "max_changed_files": 20,
+    "max_changed_lines": 1500,
+    "max_agent_calls": 8,
+    "max_cost_usd": null
+  },
+  "required_checks": [
+    "Project checks / validate-and-test"
+  ],
+  "permissions": {
+    "implementer_can_push_work_branch": true,
+    "reviewer_can_edit_implementation": false,
+    "agents_can_push_main": false,
+    "agents_can_merge": false,
+    "allow_force_push": false,
+    "allow_secret_output": false
+  },
+  "stop_conditions": [
+    "budget_exhausted",
+    "same_finding_repeated_twice",
+    "validation_failed_twice",
+    "base_branch_conflict",
+    "missing_user_decision",
+    "permission_violation",
+    "scope_expansion"
+  ],
+  "terminal_states": [
+    "complete",
+    "blocked",
+    "failed",
+    "cancelled"
+  ]
+}

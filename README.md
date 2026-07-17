@@ -33,6 +33,7 @@ UCI SECOM semiconductor process sensor data瑜??ъ슜???쒗뭹???뺤긽/遺덈�
 - `scripts/analyze_equipment_anomalies.py`: CLI for equipment sensor anomaly detection
 - `scripts/generate_integrated_dashboard.py`: CLI for generating the integrated HTML dashboard
 - `docs/COLAB_WAFER_AI.md`: Colab runner and external WM-811K path guide
+- `docs/AGENT_BRIDGE.md`: bounded hosted Codex-Claude review-loop design
 - `scripts/assemble_feature_table.py`: CLI for assembling modeling feature tables
 - `scripts/predict_with_model.py`: CLI for batch prediction with saved model bundles
 - `scripts/generate_monitoring_report.py`: CLI for process-quality monitoring reports

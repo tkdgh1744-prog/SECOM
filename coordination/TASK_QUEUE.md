@@ -14,7 +14,7 @@ Status values: `ready`, `active`, `review`, `blocked`, `done`.
 | T-008 | P1 | done | Codex | Integrate the three analysis outputs into one program view. | Missing data and unrelated IDs are handled honestly. |
 | T-009 | P2 | done | Codex | Add model profiling for size, latency, memory, and operation proxies. | Repeated CPU measurements produce CSV/JSON results for PyTorch FP32, ONNX FP32, and ONNX INT8. |
 | T-010 | P2 | done | User and Codex | Select the current hardware/runtime scope: CPU/ONNX target, cloud GPU training, NPU unavailable/deferred. | Device matrix and measurement protocol are approved in D-010 and D-013. |
-| T-011 | P2 | ready | Codex and Claude | Design the cloud agent bridge and review loop. | State machine, budgets, stop conditions, and permissions are documented. |
+| T-011 | P2 | done | Codex and Claude | Design the cloud agent bridge and review loop. | State machine, budgets, stop conditions, and permissions are documented in `docs/AGENT_BRIDGE.md`. |
 | T-012 | P1 | review | Claude | Review the PyTorch CNN, autoencoder, grouped split, and ONNX path. | PyTorch model trains on demo data; CI stays green; ONNX export path works. |
 
 ## Immediate order
@@ -27,3 +27,4 @@ Status values: `ready`, `active`, `review`, `blocked`, `done`.
 6. Claude: review T-012. CPU PyTorch, ONNX export, and ONNX Runtime inference pass in the local AI environment.
 7. T-009 is complete: PyTorch FP32, ONNX Runtime FP32, and ONNX Runtime INT8 write repeated CPU profiles to CSV/JSON. NPU remains unavailable.
 8. Merge `codex/collaboration-baseline` to `main` only after review and user approval.
+9. T-011 design is complete. Implementation remains gated on P-004 hosted runtime/API authentication and must begin in dry-run mode.

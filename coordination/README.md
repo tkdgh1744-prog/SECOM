@@ -13,6 +13,12 @@ affect implementation must be recorded here so both agents can work from the sam
 5. Claude records review findings in `CLAUDE_FEEDBACK.md`.
 6. Run the required checks before requesting a merge.
 
+Focused handoffs and future automation:
+
+- `CLAUDE_T012_PROMPT.md`: exact review contract for the PyTorch/ONNX milestone.
+- `../docs/AGENT_BRIDGE.md`: hosted Codex-Claude orchestration design.
+- `agent_bridge.example.json`: machine-readable dry-run limits and permissions.
+
 ## Safety rules
 
 - Do not push directly to `main`.

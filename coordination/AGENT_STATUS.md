@@ -23,3 +23,11 @@ T-002 review is complete (see `CLAUDE_FEEDBACK.md`, verdict `approve with follow
 CI + coordination baseline is safe to merge to `main` after user approval. Before Codex starts
 the analysis baselines (T-005 onward), the user should resolve decision requests D-A, D-B, and
 D-C and lock the split policy (finding C-002), since those shape model design.
+
+## Current update
+
+- T-009 CPU profiling is complete in `ea6f405` and pushed to the collaboration branch.
+- T-010 is resolved: CPU/ONNX is primary, cloud GPU is training-only, and NPU is unavailable.
+- T-011 bridge design is complete; hosted runtime/API authentication remains P-004.
+- T-012 remains with Claude for review. `CLAUDE_T012_PROMPT.md` is the exact handoff.
+- The first stable `main` merge remains gated on the T-012 verdict.
