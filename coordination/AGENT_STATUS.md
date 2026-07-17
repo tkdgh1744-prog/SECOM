@@ -29,5 +29,5 @@ D-C and lock the split policy (finding C-002), since those shape model design.
 - T-009 CPU profiling is complete in `ea6f405` and pushed to the collaboration branch.
 - T-010 is resolved: CPU/ONNX is primary, cloud GPU is training-only, and NPU is unavailable.
 - T-011 bridge design is complete; hosted runtime/API authentication remains P-004.
-- T-012 remains with Claude for review. `CLAUDE_T012_PROMPT.md` is the exact handoff.
-- The first stable `main` merge remains gated on the T-012 verdict.
+- T-012 is approved by Claude in `ab8a497`; only non-blocking real-data metric and FLOPs follow-ups remain.
+- The first stable `main` merge is approved and ready for final verification.
