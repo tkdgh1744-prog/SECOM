@@ -27,11 +27,12 @@ KNOWN_WAFER_PATTERNS = [
 
 @dataclass(frozen=True)
 class WaferMapRecord:
-    """A single wafer map and optional pattern label."""
+    """A single wafer map with optional pattern label and leakage group."""
 
     wafer_id: str
     wafer_map: np.ndarray
     label: str | None = None
+    group_id: str | None = None
 
 
 def normalize_pattern_label(value: object) -> str | None:
@@ -334,6 +335,7 @@ def load_wm811k_dataframe(
     wafer_map_col: str = "waferMap",
     label_col: str | None = "failureType",
     id_col: str | None = None,
+    group_col: str | None = "lotName",
 ) -> list[WaferMapRecord]:
     """Load WM-811K style pickle data with a waferMap column."""
     data = pd.read_pickle(path)
@@ -344,7 +346,19 @@ def load_wm811k_dataframe(
     for index, row in data.iterrows():
         wafer_id = str(row[id_col]) if id_col and id_col in data.columns else str(index)
         label = normalize_pattern_label(row[label_col]) if label_col and label_col in data.columns else None
-        records.append(WaferMapRecord(wafer_id=wafer_id, wafer_map=np.asarray(row[wafer_map_col]), label=label))
+        group_id = (
+            normalize_pattern_label(row[group_col])
+            if group_col and group_col in data.columns
+            else None
+        )
+        records.append(
+            WaferMapRecord(
+                wafer_id=wafer_id,
+                wafer_map=np.asarray(row[wafer_map_col]),
+                label=label,
+                group_id=group_id,
+            )
+        )
     return records
 
 
@@ -414,6 +428,7 @@ def load_wafer_map_records(
     wafer_map_col: str = "waferMap",
     label_col: str | None = "failureType",
     id_col: str | None = None,
+    group_col: str | None = "lotName",
     wafer_id_col: str = "wafer_id",
     x_col: str = "x",
     y_col: str = "y",
@@ -435,7 +450,13 @@ def load_wafer_map_records(
             raise ValueError(f"Cannot infer wafer map input format from: {path}")
 
     if detected_format == "wm811k":
-        return load_wm811k_dataframe(path, wafer_map_col=wafer_map_col, label_col=label_col, id_col=id_col)
+        return load_wm811k_dataframe(
+            path,
+            wafer_map_col=wafer_map_col,
+            label_col=label_col,
+            id_col=id_col,
+            group_col=group_col,
+        )
     if detected_format == "array":
         return load_array_wafer_maps(path)
     if detected_format == "coordinate":

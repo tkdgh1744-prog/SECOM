@@ -1,6 +1,6 @@
 ﻿PYTHON ?= python
 
-.PHONY: validate test check train-secom quality-report auxiliary-features wafer-map-analysis wafer-map-demo equipment-anomaly-demo dashboard dashboard-demo assemble-features predict monitor summary pipeline
+.PHONY: validate test check train-secom quality-report auxiliary-features wafer-map-analysis wafer-map-demo wafer-ai-demo equipment-anomaly-demo dashboard dashboard-demo assemble-features predict monitor summary pipeline
 
 validate:
 	$(PYTHON) validate_notebook.py
@@ -25,6 +25,9 @@ wafer-map-analysis:
 
 wafer-map-demo:
 	$(PYTHON) scripts/analyze_wafer_maps.py --demo --output-dir outputs/wafer_maps_demo
+
+wafer-ai-demo:
+	$(PYTHON) scripts/analyze_wafer_maps.py --demo --train-cnn --cnn-epochs 1 --autoencoder --autoencoder-epochs 1 --ai-backend pytorch --device cpu --export-onnx --output-dir outputs/wafer_maps_pytorch_demo
 
 equipment-anomaly-demo:
 	$(PYTHON) scripts/analyze_equipment_anomalies.py --demo --output-dir outputs/equipment_anomalies_demo

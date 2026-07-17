@@ -4,7 +4,7 @@ matplotlib
 seaborn
 scikit-learn
 imbalanced-learn
-tensorflow
+# Install requirements-ai.txt only when wafer deep-learning or ONNX export is needed.
 joblib
 openpyxl
 notebook

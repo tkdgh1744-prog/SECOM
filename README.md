@@ -6,6 +6,7 @@ UCI SECOM semiconductor process sensor data瑜??ъ슜???쒗뭹???뺤긽/遺덈�
 
 - `SECOM.ipynb`: main Google Colab analysis notebook
 - `requirements.txt`: package list for local execution
+- `requirements-ai.txt`: optional PyTorch, ONNX, and ONNX Runtime stack
 - `Makefile`: standard project commands
 - `src/secom_data.py`: reusable data loading utilities
 - `src/data_contracts.py`: schema and value contract checks for input/output tables
@@ -17,6 +18,8 @@ UCI SECOM semiconductor process sensor data瑜??ъ슜???쒗뭹???뺤긽/遺덈�
 - `src/secom_training.py`: model ranking and threshold tuning helpers
 - `src/wafer_features.py`: wafer defect spatial feature utilities
 - `src/wafer_map_analysis.py`: wafer map spatial pattern analysis, similarity, clustering, visualization, and optional AI utilities
+- `src/wafer_torch.py`: grouped PyTorch training, model bundles, and ONNX export
+- `src/wafer_ai_outputs.py`: PyTorch and legacy TensorFlow artifact orchestration
 - `src/equipment_features.py`: equipment event feature utilities
 - `src/equipment_anomaly.py`: time-aware robust equipment anomaly detector
 - `src/integrated_dashboard.py`: standalone integrated result dashboard builder
@@ -27,6 +30,7 @@ UCI SECOM semiconductor process sensor data瑜??ъ슜???쒗뭹???뺤긽/遺덈�
 - `scripts/analyze_wafer_maps.py`: CLI for WM-811K/array/coordinate wafer map analysis
 - `scripts/analyze_equipment_anomalies.py`: CLI for equipment sensor anomaly detection
 - `scripts/generate_integrated_dashboard.py`: CLI for generating the integrated HTML dashboard
+- `docs/COLAB_WAFER_AI.md`: Colab runner and external WM-811K path guide
 - `scripts/assemble_feature_table.py`: CLI for assembling modeling feature tables
 - `scripts/predict_with_model.py`: CLI for batch prediction with saved model bundles
 - `scripts/generate_monitoring_report.py`: CLI for process-quality monitoring reports
@@ -77,6 +81,7 @@ make quality-report     # generate SECOM quality CSV reports
 make auxiliary-features # build wafer/equipment feature CSV files
 make wafer-map-analysis # analyze WM-811K-style wafer map spatial patterns
 make wafer-map-demo     # generate deterministic synthetic wafer-map outputs
+make wafer-ai-demo      # train PyTorch demo models and export ONNX
 make equipment-anomaly-demo # generate deterministic equipment anomaly outputs
 make dashboard          # generate the integrated dashboard from default output paths
 make dashboard-demo     # generate both synthetic tracks and the integrated dashboard
@@ -135,6 +140,15 @@ python scripts/analyze_wafer_maps.py --input-path data/raw/wm811k.pkl --input-fo
 python scripts/analyze_wafer_maps.py --input-path data/raw/wafer_die_map.csv --input-format coordinate --value-col die_status --coordinate-defect-value FAIL --output-dir outputs/wafer_maps
 ```
 
+Install the optional AI stack, then use the same command on local CPU or Colab GPU:
+
+```bash
+python -m pip install -r requirements-ai.txt
+python scripts/analyze_wafer_maps.py --demo --train-cnn --cnn-epochs 1 --autoencoder --autoencoder-epochs 1 --ai-backend pytorch --device auto --export-onnx --output-dir outputs/wafer_maps_pytorch_demo
+```
+
+See `docs/COLAB_WAFER_AI.md` for Google Drive dataset mounting and a full WM-811K command.
+
 주요 산출물:
 
 - `outputs/wafer_maps/wafer_map_features.csv`: 불량 Die 개수/비율, 중심부/외곽부 비율, 반경별 분포, 군집 수, 대칭성, 방향 편향, 휴리스틱 패턴
@@ -144,7 +158,11 @@ python scripts/analyze_wafer_maps.py --input-path data/raw/wafer_die_map.csv --i
 - `outputs/wafer_maps/images/`: 웨이퍼 맵 및 패턴 요약 PNG
 - `outputs/wafer_maps/wafer_map_report.md`: 분석 리포트
 
-라벨이 있는 데이터에서는 `--train-cnn`으로 CNN 패턴 분류를, `--autoencoder`로 Autoencoder 기반 이상 패턴 점수를 추가로 만들 수 있습니다. TensorFlow가 설치되어 있지 않으면 이 AI 옵션만 건너뛰고 기초 분석은 계속 사용할 수 있습니다.
+PyTorch is the default AI backend. `--train-cnn` writes a `.pt` state-dict bundle,
+grouped split audit CSV, metrics, and optional ONNX model. `--autoencoder` writes
+reconstruction scores plus `.pt` and ONNX models. WM-811K uses `lotName` as the
+default leakage group. The temporary legacy path remains available with
+`--ai-backend tensorflow`.
 
 ## Equipment Anomaly CLI
 

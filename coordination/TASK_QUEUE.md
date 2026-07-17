@@ -15,15 +15,15 @@ Status values: `ready`, `active`, `review`, `blocked`, `done`.
 | T-009 | P2 | ready | Codex | Add model profiling for size, latency, memory, and operation proxies. | Repeated measurements produce machine-readable results. |
 | T-010 | P2 | blocked | User | Select CPU/GPU/NPU target hardware and runtimes. | Device matrix and measurement protocol are approved. |
 | T-011 | P2 | ready | Codex and Claude | Design the cloud agent bridge and review loop. | State machine, budgets, stop conditions, and permissions are documented. |
-| T-012 | P1 | ready | Codex | Migrate the wafer-map CNN and autoencoder from TensorFlow to PyTorch (per D-009). | PyTorch model trains on demo data; CI stays green; ONNX export path works. |
+| T-012 | P1 | review | Claude | Review the PyTorch CNN, autoencoder, grouped split, and ONNX path. | PyTorch model trains on demo data; CI stays green; ONNX export path works. |
 
 ## Immediate order
 
-1. T-001, T-002, and T-003 are complete. The current suite passes 81 tests with 3 optional-dependency skips.
+1. T-001, T-002, and T-003 are complete. The current suite passes 88 tests; 6 are skipped without optional AI/model dependencies.
 2. T-007 is complete in `b134b66`: time-aware CPU equipment anomaly baseline and machine-readable outputs.
 3. Claude approved T-007 and T-008; minor follow-ups are recorded in `CLAUDE_FEEDBACK.md`.
 4. Resolve T-004 by documenting a licensed WM-811K source and local dataset path.
 5. Continue T-005 and T-006 once real wafer data is available; enforce grouped splits from D-011.
-6. Install or provide PyTorch and ONNX Runtime before starting T-012.
+6. Claude: review T-012. CPU PyTorch, ONNX export, and ONNX Runtime inference pass in the local AI environment.
 7. Start T-009 profiling after model artifacts are stable; keep NPU measurements blocked until target hardware exists.
 8. Merge `codex/collaboration-baseline` to `main` only after review and user approval.

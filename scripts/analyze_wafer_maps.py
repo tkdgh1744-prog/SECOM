@@ -11,14 +11,12 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 import numpy as np
-import pandas as pd
 
+from src.wafer_ai_outputs import run_optional_wafer_ai_outputs
 from src.wafer_map_analysis import (
     WaferMapRecord,
     load_wafer_map_records,
     run_wafer_map_analysis,
-    train_autoencoder_anomaly_scores,
-    train_cnn_pattern_classifier,
 )
 
 
@@ -87,6 +85,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--wafer-map-col", default="waferMap")
     parser.add_argument("--label-col", type=parse_optional_text, default="failureType")
     parser.add_argument("--id-col", type=parse_optional_text, default=None)
+    parser.add_argument("--group-col", type=parse_optional_text, default="lotName")
     parser.add_argument("--wafer-id-col", default="wafer_id")
     parser.add_argument("--x-col", default="x")
     parser.add_argument("--y-col", default="y")
@@ -98,11 +97,26 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--cnn-epochs", type=int, default=5)
     parser.add_argument("--autoencoder", action="store_true", help="Train autoencoder anomaly scoring model.")
     parser.add_argument("--autoencoder-epochs", type=int, default=5)
+    parser.add_argument("--ai-backend", choices=["pytorch", "tensorflow"], default="pytorch")
+    parser.add_argument("--device", choices=["auto", "cpu", "cuda", "mps"], default="auto")
+    parser.add_argument("--ai-resize-to", type=parse_positive_int, default=32)
+    parser.add_argument("--ai-batch-size", type=parse_positive_int, default=32)
+    parser.add_argument(
+        "--export-onnx",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Export PyTorch models to ONNX when the ONNX package is installed.",
+    )
     return parser.parse_args()
 
 
-def make_demo_records(size: int = 33) -> list[WaferMapRecord]:
+def make_demo_records(
+    size: int = 33,
+    variants_per_pattern: int = 1,
+) -> list[WaferMapRecord]:
     """Create small synthetic wafer maps for smoke testing the workflow."""
+    if variants_per_pattern <= 0:
+        raise ValueError("variants_per_pattern must be greater than 0.")
     rows, cols = np.indices((size, size))
     center = (size - 1) / 2
     radius = np.sqrt((rows - center) ** 2 + (cols - center) ** 2)
@@ -141,13 +155,38 @@ def make_demo_records(size: int = 33) -> list[WaferMapRecord]:
     near_full[valid & (rows + cols > size * 0.45)] = 2
     records.append(WaferMapRecord("demo_near_full", near_full, "Near-Full"))
 
-    return records
+    grouped_records = [
+        WaferMapRecord(
+            wafer_id=record.wafer_id,
+            wafer_map=record.wafer_map,
+            label=record.label,
+            group_id="demo_lot_0",
+        )
+        for record in records
+    ]
+    for variant in range(1, variants_per_pattern):
+        for record in records:
+            valid_mask = record.wafer_map > 0
+            defect_mask = record.wafer_map == 2
+            shifted = np.roll(defect_mask, shift=(variant, -variant), axis=(0, 1))
+            variant_map = np.where(valid_mask, 1, 0)
+            variant_map[shifted & valid_mask] = 2
+            grouped_records.append(
+                WaferMapRecord(
+                    wafer_id=f"{record.wafer_id}_v{variant}",
+                    wafer_map=variant_map,
+                    label=record.label,
+                    group_id=f"demo_lot_{variant}",
+                )
+            )
+    return grouped_records
 
 
 def load_records_from_args(args: argparse.Namespace) -> list[WaferMapRecord]:
     """Load user-provided or demo wafer map records."""
     if args.demo:
-        records = make_demo_records()
+        ai_requested = bool(getattr(args, "train_cnn", False) or getattr(args, "autoencoder", False))
+        records = make_demo_records(variants_per_pattern=3 if ai_requested else 1)
         return records[: args.max_records] if args.max_records is not None else records
     if args.input_path is None:
         raise ValueError("Pass --input-path or use --demo.")
@@ -157,6 +196,7 @@ def load_records_from_args(args: argparse.Namespace) -> list[WaferMapRecord]:
         wafer_map_col=args.wafer_map_col,
         label_col=args.label_col,
         id_col=args.id_col,
+        group_col=args.group_col,
         wafer_id_col=args.wafer_id_col,
         x_col=args.x_col,
         y_col=args.y_col,
@@ -174,51 +214,26 @@ def run_optional_ai_outputs(
     cnn_epochs: int = 5,
     autoencoder: bool = False,
     autoencoder_epochs: int = 5,
+    backend: str = "pytorch",
+    device: str = "auto",
+    resize_to: int = 32,
+    batch_size: int = 32,
+    export_onnx: bool = True,
 ) -> dict[str, Path]:
-    """Run optional TensorFlow-based AI outputs."""
-    outputs: dict[str, Path] = {}
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    if train_cnn:
-        labeled_records = [record for record in records if record.label]
-        labels = [str(record.label) for record in labeled_records]
-        if len(labeled_records) < 4 or len(set(labels)) < 2:
-            skip_path = output_dir / "cnn_skipped.txt"
-            skip_path.write_text("CNN skipped: at least 4 labeled maps across 2 classes are required.\n", encoding="utf-8")
-            outputs["cnn_skipped"] = skip_path
-        else:
-            try:
-                cnn_result = train_cnn_pattern_classifier(labeled_records, labels, epochs=cnn_epochs)
-            except ImportError as exc:
-                skip_path = output_dir / "cnn_skipped.txt"
-                skip_path.write_text(f"CNN skipped: {exc}\n", encoding="utf-8")
-                outputs["cnn_skipped"] = skip_path
-            else:
-                model_path = output_dir / "cnn_pattern_classifier.keras"
-                metrics_path = output_dir / "cnn_metrics.csv"
-                classes_path = output_dir / "cnn_label_classes.csv"
-                cnn_result["model"].save(model_path)
-                pd.DataFrame(
-                    [{"test_loss": cnn_result["test_loss"], "test_accuracy": cnn_result["test_accuracy"]}]
-                ).to_csv(metrics_path, index=False)
-                pd.DataFrame({"class_name": cnn_result["classes"]}).to_csv(classes_path, index=False)
-                outputs["cnn_model"] = model_path
-                outputs["cnn_metrics"] = metrics_path
-                outputs["cnn_classes"] = classes_path
-
-    if autoencoder:
-        try:
-            scores = train_autoencoder_anomaly_scores(records, epochs=autoencoder_epochs)
-        except ImportError as exc:
-            skip_path = output_dir / "autoencoder_skipped.txt"
-            skip_path.write_text(f"Autoencoder skipped: {exc}\n", encoding="utf-8")
-            outputs["autoencoder_skipped"] = skip_path
-        else:
-            scores_path = output_dir / "autoencoder_anomaly_scores.csv"
-            scores.to_csv(scores_path, index=False)
-            outputs["autoencoder_scores"] = scores_path
-
-    return outputs
+    """Run optional wafer AI outputs with a selectable training backend."""
+    return run_optional_wafer_ai_outputs(
+        records=records,
+        output_dir=output_dir,
+        train_cnn=train_cnn,
+        cnn_epochs=cnn_epochs,
+        autoencoder=autoencoder,
+        autoencoder_epochs=autoencoder_epochs,
+        backend=backend,
+        device=device,
+        resize_to=resize_to,
+        batch_size=batch_size,
+        export_onnx=export_onnx,
+    )
 
 
 def analyze_wafer_maps_from_args(args: argparse.Namespace) -> dict[str, Path]:
@@ -241,6 +256,11 @@ def analyze_wafer_maps_from_args(args: argparse.Namespace) -> dict[str, Path]:
             cnn_epochs=args.cnn_epochs,
             autoencoder=args.autoencoder,
             autoencoder_epochs=args.autoencoder_epochs,
+            backend=args.ai_backend,
+            device=args.device,
+            resize_to=args.ai_resize_to,
+            batch_size=args.ai_batch_size,
+            export_onnx=args.export_onnx,
         )
     )
     return outputs
